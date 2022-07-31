@@ -1,8 +1,8 @@
 from datetime import datetime, timedelta
 
+import jwt
 from decouple import config
 from flask_httpauth import HTTPTokenAuth
-import jwt
 from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from werkzeug.exceptions import BadRequest
 

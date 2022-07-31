@@ -1,5 +1,6 @@
 from flask import request
 from flask_restful import Resource
+
 from managers.auth import auth
 from managers.complaint import ComplaintManager
 from models import UserRole
