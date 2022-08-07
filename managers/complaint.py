@@ -1,9 +1,13 @@
+import os
 import uuid
 
+from constants.common import TEMP_DIR
 from db import db
-from models import UserRole, ComplaintState, TransactionModel
+from models import ComplaintState, TransactionModel, UserRole
 from models.complaint import Complaint
+from services.s3 import S3Service
 from services.wise import WiseService
+from utils.common import decode_file
 
 wise = WiseService()
 
@@ -19,16 +23,30 @@ class ComplaintManager:
     @staticmethod
     def create(data, user):
         data["complainer_id"] = user.id
-        complaint = Complaint(**data)
-        db.session.add(complaint)
-        db.session.flush()
-        ComplaintManager.issue_transaction(
-            data["amount"],
-            f"{user.first_name} {user.last_name}",
-            user.iban,
-            complaint.id,
-        )
-        return complaint
+        extension = data.pop("extension")
+        photo = data.pop("photo")
+        file_name = f"{uuid.uuid4()}.{extension}"
+        path = os.path.join(TEMP_DIR, file_name)
+        decode_file(path, photo)
+        s3 = S3Service()
+        photo_url = s3.upload_photo(path, file_name)
+
+        try:
+            data["photo_url"] = photo_url
+            complaint = Complaint(**data)
+            db.session.add(complaint)
+            db.session.flush()
+            ComplaintManager.issue_transaction(
+                data["amount"],
+                f"{user.first_name} {user.last_name}",
+                user.iban,
+                complaint.id,
+            )
+            return complaint
+        except Exception:
+            s3.delete_photo(key=file_name)
+        finally:
+            os.remove(path)
 
     @staticmethod
     def approve(complaint_id):
