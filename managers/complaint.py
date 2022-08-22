@@ -36,12 +36,15 @@ class ComplaintManager:
             complaint = Complaint(**data)
             db.session.add(complaint)
             db.session.flush()
-            ComplaintManager.issue_transaction(
+            transaction_data = ComplaintManager.issue_transaction(
                 data["amount"],
                 f"{user.first_name} {user.last_name}",
                 user.iban,
                 complaint.id,
             )
+            transaction = TransactionModel(**transaction_data)
+            db.session.add(transaction)
+            db.session.flush()
             return complaint
         except Exception:
             s3.delete_photo(key=file_name)
@@ -80,6 +83,4 @@ class ComplaintManager:
             "amount": amount,
             "complaint_id": complaint_id,
         }
-        transaction = TransactionModel(**data)
-        db.session.add(transaction)
-        db.session.flush()
+        return data
