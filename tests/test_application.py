@@ -2,6 +2,8 @@ from flask_testing import TestCase
 
 from config import create_app
 from db import db
+from tests.helpers import generate_token
+from tests.factories import ComplainerFactory
 
 ENDPOINTS_DATA = (
     ("/complaint/", "GET"),
@@ -58,3 +60,19 @@ class TestApp(TestCase):
         self.iterate_endpoints(
             ENDPOINTS_DATA, self.assert_401, {"message": "Invalid token"}, headers
         )
+
+    def test_missing_permissions_for_approver_raises(self):
+        endpoints = (
+            (("/complaint/1/approve/", "PUT"), ("/complaint/1/reject/", "PUT")),
+        )
+        user = ComplainerFactory()
+        token = generate_token(user)
+        headers = {"Authorization": f"Bearer {token}"}
+        resp = None
+        for url, method in endpoints:
+            if method == "PUT":
+                resp = self.client.put(url, headers={})
+                self.assert403(resp)
+                self.assertEqual(resp.json, "Permission denied")
+
+    # TODO: Test token is expired using patching
