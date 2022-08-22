@@ -17,6 +17,8 @@ class AuthManager:
 
     @staticmethod
     def decode_token(token):
+        if not token:
+            raise Unauthorized("Missing token")
         try:
             payload = jwt.decode(token, key=config("JWT_SECRET"), algorithms=["HS256"])
             return payload["sub"]
