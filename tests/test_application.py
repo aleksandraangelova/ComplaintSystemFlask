@@ -63,16 +63,18 @@ class TestApp(TestCase):
 
     def test_missing_permissions_for_approver_raises(self):
         endpoints = (
-            (("/complaint/1/approve/", "PUT"), ("/complaint/1/reject/", "PUT")),
-        )
+                ("/complaint/1/approve/", "PUT"),
+                ("/complaint/1/reject/", "PUT"),
+            )
+
         user = ComplainerFactory()
         token = generate_token(user)
         headers = {"Authorization": f"Bearer {token}"}
         resp = None
         for url, method in endpoints:
             if method == "PUT":
-                resp = self.client.put(url, headers={})
-                self.assert403(resp)
-                self.assertEqual(resp.json, "Permission denied")
+                resp = self.client.put(url, headers=headers)
+            self.assert403(resp)
+            self.assertEqual(resp.json, {"message": "Permission denied"})
 
     # TODO: Test token is expired using patching
