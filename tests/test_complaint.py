@@ -133,3 +133,31 @@ class TestComplaint(TestCase):
 
         transactions = TransactionModel.query.all()
         assert len(transactions) == 1
+
+    def test_register_schema_raises_invalid_first_name(self):
+        data = {
+            "last_name": "test",
+            "email": "test@test.com",
+            "iban": "aaaaaaaaaaaaaaaaaaaaaa",
+            "phone": "11111111111111",
+            "password": "123@456asd1"
+        }
+        url = "/register/"
+        headers = {"Content-Type": "application/json"}
+
+        # Missing name
+        resp = self.client.post(url, headers=headers, json=data)
+        self.assert400(resp)
+        assert resp.json == {"message": {"first_name": ["Missing data for required field."]}}
+
+        # Too short first name
+        data["first_name"] = "A"
+        resp = self.client.post(url, headers=headers, json=data)
+        self.assert400(resp)
+        assert resp.json == {"message": {"first_name": ["Length must be between 2 and 20."]}}
+
+        # Too long first name
+        data["first_name"] = "AAAAAAAAAAAAAAAAAAAAAA"
+        resp = self.client.post(url, headers=headers, json=data)
+        self.assert400(resp)
+        assert resp.json == {"message": {"first_name": ["Length must be between 2 and 20."]}}
