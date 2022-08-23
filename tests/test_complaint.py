@@ -49,14 +49,12 @@ class TestComplaint(TestCase):
         resp = self.client.post(self.url, headers=headers, json=data)
         self.assert400(resp)
 
-        assert resp.json == {
-            "message": {
+        assert resp.json["message"] == {
                 "amount": ["Missing data for required field."],
                 "description": ["Missing data for required field."],
                 "extension": ["Missing data for required field."],
                 "photo": ["Missing data for required field."],
                 "title": ["Missing data for required field."],
-            }
         }
 
         complaints = Complaint.query.all()
