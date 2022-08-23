@@ -32,9 +32,38 @@ class TestComplaint(TestCase):
         db.session.remove()
         db.drop_all()
 
-    def test_create_complaint_schema(self):
-        # TODO
-        pass
+    def test_create_complaint_schema_missing_fields_raises(self):
+        complaints = Complaint.query.all()
+        assert len(complaints) == 0
+
+        transactions = TransactionModel.query.all()
+        assert len(transactions) == 0
+
+        user = ComplainerFactory()
+        token = generate_token(user)
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }
+        data = {}
+        resp = self.client.post(self.url, headers=headers, json=data)
+        self.assert400(resp)
+
+        assert resp.json == {
+            "message": {
+                "amount": ["Missing data for required field."],
+                "description": ["Missing data for required field."],
+                "extension": ["Missing data for required field."],
+                "photo": ["Missing data for required field."],
+                "title": ["Missing data for required field."],
+            }
+        }
+
+        complaints = Complaint.query.all()
+        assert len(complaints) == 0
+
+        transactions = TransactionModel.query.all()
+        assert len(transactions) == 0
 
     @patch.object(
         ComplaintManager,
@@ -92,7 +121,7 @@ class TestComplaint(TestCase):
             data["amount"],
             f"{user.first_name} {user.last_name}",
             user.iban,
-            mocked_transaction.return_value["complaint_id"]
+            mocked_transaction.return_value["complaint_id"],
         )
 
         # Test DB
